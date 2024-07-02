@@ -1,31 +1,40 @@
-import { ISignUpUser, ILoginUser, UserLoginToken } from "@/models/user";
-import { AxiosInstance } from "axios";
+import { AxiosInstance, AxiosResponse, AxiosError } from "axios";
+import { LoginRequest, LoginResponse } from "@/models/user";
 
-interface IUserAPI {
-  signUp: (data: ISignUpUser) => Promise<UserLoginToken>;
-  login: (data: ILoginUser) => Promise<UserLoginToken>;
+export interface IUserAPI {
+  login(data: LoginRequest): Promise<LoginResponse>;
 }
 
-export default class UserAPI implements IUserAPI {
-  constructor(readonly axios: AxiosInstance) {}
+export class UserApi implements IUserAPI {
+  private axios: AxiosInstance;
 
-  async signUp(data: ISignUpUser): Promise<UserLoginToken> {
-    const result = await this.axios.post("/api/users/signup", {
-      data,
-    });
-
-    if (result.status !== 201) throw new UserSignUpError("Failed to sign up.");
-
-    return UserLoginToken.fromJSON(result.data);
+  constructor(axios: AxiosInstance) {
+    this.axios = axios;
   }
 
-  async login(data: ILoginUser): Promise<UserLoginToken> {
-    const result = await this.axios.post("/api/users/login", {
-      data,
-    });
+  async login(data: LoginRequest): Promise<LoginResponse> {
+    // server api 관련된 logic
+    // retry, caching, error handling, status code handling 등
 
-    if (result.status !== 200) throw new UserLoginError("Failed to login.");
-
-    return UserLoginToken.fromJSON(result.data);
+    try {
+      const response: AxiosResponse<LoginResponse> =
+        await this.axios.post<LoginResponse>("v1/users/login", data);
+      return response.data;
+    } catch (error) {
+      if (error instanceof AxiosError && error.response) {
+        switch (error.response.status) {
+          case 400:
+            throw new Error("Invalid request");
+          case 401:
+            throw new Error("Unauthorized");
+          case 500:
+            throw new Error("Server error");
+          default:
+            throw new Error(`Unexpected error: ${error.response.status}`);
+        }
+      } else {
+        throw new Error("Network error or unknown error");
+      }
+    }
   }
 }

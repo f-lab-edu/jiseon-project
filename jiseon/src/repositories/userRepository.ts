@@ -1,22 +1,20 @@
-import IUserAPI from "@/api/users";
-import {
-  UserLoginToken,
-  UserSignUpInformation,
-  SignUpUser,
-} from "@/models/user";
-interface IUserRepository {
-  getAccessToken(
-    userSignUpInformation: UserSignUpInformation
-  ): Promise<UserLoginToken>;
+import { LoginRequest, LoginResponse } from "@/models/user";
+import { IUserAPI } from "@/api/users";
+
+export interface IUserRepository {
+  login(data: LoginRequest): Promise<LoginResponse>;
 }
 
-export default class UserRepository implements IUserRepository {
-  constructor(readonly userAPI: IUserAPI) {}
+export class UserRepository implements IUserRepository {
+  private userApi: IUserAPI;
 
-  async getAccessToken(userSignUpInformation: UserSignUpInformation) {
-    const signUpUser = SignUpUser.fromUserSignUpInformation(
-      userSignUpInformation
-    );
-    return await this.userAPI.signUp(signUpUser);
+  constructor(userApi: IUserAPI) {
+    this.userApi = userApi;
+  }
+
+  async login(data: LoginRequest): Promise<LoginResponse> {
+    // server query 관련된 logic
+
+    return this.userApi.login(data);
   }
 }
