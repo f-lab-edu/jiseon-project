@@ -1,11 +1,11 @@
-export interface ISignUpUser {
+export interface LoginRequest {
   email: string;
   password: string;
-  nickname: string;
-  contact_info: string;
 }
 
-export interface ILoginUser {
+export interface LoginResponse {
+  user_id: number;
   email: string;
-  password: string;
+  nickname: string;
+  token: string;
 }

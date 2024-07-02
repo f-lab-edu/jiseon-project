@@ -1,25 +1,40 @@
-import { ISignUpUser, ILoginUser } from "@/models/user";
-import axios from "axios";
+import { AxiosInstance, AxiosResponse, AxiosError } from "axios";
+import { LoginRequest, LoginResponse } from "@/models/user";
 
-interface IUserAPI {
-  signUp: (data: ISignUpUser) => Promise<any>;
-  login: (data: ILoginUser) => Promise<any>;
+export interface IUserAPI {
+  login(data: LoginRequest): Promise<LoginResponse>;
 }
 
-export default class UserAPI implements IUserAPI {
-  constructor() {}
+export class UserApi implements IUserAPI {
+  private axios: AxiosInstance;
 
-  async signUp(data: ISignUpUser): Promise<any> {
-    const result = await axios.post("/api/users/signup", {
-      data,
-    });
-    return result;
+  constructor(axios: AxiosInstance) {
+    this.axios = axios;
   }
 
-  async login(data: ILoginUser): Promise<any> {
-    const result = await axios.post("/api/users/login", {
-      data,
-    });
-    return result;
+  async login(data: LoginRequest): Promise<LoginResponse> {
+    // server api 관련된 logic
+    // retry, caching, error handling, status code handling 등
+
+    try {
+      const response: AxiosResponse<LoginResponse> =
+        await this.axios.post<LoginResponse>("v1/users/login", data);
+      return response.data;
+    } catch (error) {
+      if (error instanceof AxiosError && error.response) {
+        switch (error.response.status) {
+          case 400:
+            throw new Error("Invalid request");
+          case 401:
+            throw new Error("Unauthorized");
+          case 500:
+            throw new Error("Server error");
+          default:
+            throw new Error(`Unexpected error: ${error.response.status}`);
+        }
+      } else {
+        throw new Error("Network error or unknown error");
+      }
+    }
   }
 }
